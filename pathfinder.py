@@ -2,63 +2,31 @@ import pygame
 import queue
 from queue import PriorityQueue
 from spot import Spot
-from pygame.locals import *
-import mazes
+from button import Button
+from mazes import mazes
 
 pygame.init()
 
 
-RED = (255, 0, 0)
-DARKRED = (180, 0, 0)
-GREEN = (0, 255, 0)
-DARKGREEN = (0, 180, 0)
-BLUE = (0, 255, 0)
-YELLOW = (255, 255, 0)
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
-PURPLE = (128, 0, 128)
-ORANGE = (255, 165, 0)
+
 GREY = (128, 128, 128)
 LIGHTGREY = (150, 150, 150)
-TURQUOISE = (64, 224, 208)
+ORANGE = (255, 165, 0)
+
+RED = (255, 0, 0)
+DARKRED = (180, 0, 0)
+
+GREEN = (0, 255, 0)
+DARKGREEN = (0, 180, 0)
 
 SIZE = 600
 RIGHT_SPACE = 200
 WIN = pygame.display.set_mode((SIZE + RIGHT_SPACE, SIZE))
 pygame.display.set_caption('PathFinder')
 
-button_font = pygame.font.SysFont('Constantia', 20)
-record_font = pygame.font.SysFont('Areal', 15)
-
-class Button:
-    def __init__(self, x, y, width, height, color, color_hover, color_selected, label, selected = False):
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-        self.color = color
-        self.color_hover = color_hover
-        self.color_selected = color_selected
-        self.label = label
-        self.selected = selected
-
-
-    def draw_button(self, win):
-        pos = pygame.mouse.get_pos()
-        button_space = Rect(self.x, self.y, self.width, self.height)
-
-        if button_space.collidepoint(pos) and not self.selected:
-            pygame.draw.rect(win, self.color_hover, button_space)
-        else:
-            pygame.draw.rect(win, self.color, button_space)
-        if self.selected:
-            pygame.draw.rect(win, self.color_selected, button_space)
-
-        text = button_font.render(self.label, True, BLACK)
-        text_length = text.get_width()
-        text_height = text.get_height()
-        win.blit(text, (self.x + int(self.width / 2) - int(text_length / 2), self.y + int(self.height / 2) - int(text_height / 2)))
-
+record_font = pygame.font.SysFont('Constantia', 20)
 
 def h(p1, p2):
     x1, y1 = p1
@@ -75,14 +43,11 @@ def reconstruct_path(came_from, current, draw):
         draw()
     return length
 
-def print_record(win, path, steps):
-    win.blit(record_font.render('Steps: f{steps}', True, BLACK), (620, 240))
-    win.blit(record_font.render('Path: f{path}', True, BLACK), (620, 240))
 
-
-def a_star(draw, grid, start, end):
+def a_star(draw, grid, start, end, buttons):
     count = 0
     steps = 0
+    path_length = 0
     open_set = PriorityQueue()
     open_set.put((0, count, start))
     came_from = {}
@@ -98,16 +63,30 @@ def a_star(draw, grid, start, end):
             if event.type == pygame.QUIT:
                 pygame.quit()
 
+            if pygame.mouse.get_pressed()[0]:
+                pos = pygame.mouse.get_pos()
+                if pos[0] > buttons['return'].x \
+                        and pos[0] < (buttons['return'].x + buttons['return'].width) \
+                        and pos[1] > buttons['return'].y \
+                        and pos[1] < (buttons['return'].y + buttons['return'].height):
+                    for i in range(len(grid)):
+                        for j in range(len(grid)):
+                            if grid[i][j].is_open() or grid[i][j].is_closed() or grid[i][j].is_path():
+                                grid[i][j].reset()
+                    steps = 0
+                    path_length = 0
+                    return steps, path_length
+
         current = open_set.get()[2]
         open_set_hash.remove(current)
 
         if current == end:
-            length = reconstruct_path(came_from, end, draw)
+            path_length = reconstruct_path(came_from, end, draw)
             start.make_start()
             end.make_end()
             print(f"Steps: {steps}")
-            print(f"Path length: {length}")
-            return True
+            print(f"Path length: {path_length}")
+            return steps, path_length
 
         steps += 1
         for neighbor in current.neighbors:
@@ -122,20 +101,18 @@ def a_star(draw, grid, start, end):
                     open_set.put((f_score[neighbor], count, neighbor))
                     open_set_hash.add(neighbor)
                     neighbor.make_open()
-
         draw()
-
         if current != start:
             current.make_closed()
+    return steps, path_length
 
-    return False
 
-
-def BFS(draw, start, end):
+def BFS(draw, grid, start, end, buttons):
     open_set = queue.Queue()
     visited = set()
     came_from = {}
     steps = 0
+    path_length = 0
     open_set.put(start)
     visited.add(start)
 
@@ -144,16 +121,29 @@ def BFS(draw, start, end):
             if event.type == pygame.QUIT:
                 pygame.quit()
 
+            if pygame.mouse.get_pressed()[0]:
+                pos = pygame.mouse.get_pos()
+                if pos[0] > buttons['return'].x \
+                    and pos[0] < (buttons['return'].x + buttons['return'].width) \
+                    and pos[1] > buttons['return'].y \
+                    and pos[1] < (buttons['return'].y + buttons['return'].height):
+                    for i in range(len(grid)):
+                        for j in range(len(grid)):
+                            if grid[i][j].is_open() or grid[i][j].is_closed() or grid[i][j].is_path():
+                                grid[i][j].reset()
+                    steps = 0
+                    path_length = 0
+                    return steps, path_length
+
         current = open_set.get()
 
         if current == end:
-            length = reconstruct_path(came_from, end, draw)
+            path_length = reconstruct_path(came_from, end, draw)
             start.make_start()
             end.make_end()
-            #print_record(WIN, length, steps)
             print(f"Steps: {steps}")
-            print(f"Path length: {length}")
-            return True
+            print(f"Path length: {path_length}")
+            return steps, path_length
 
         steps += 1
         for neighbor in current.neighbors:
@@ -166,13 +156,14 @@ def BFS(draw, start, end):
         if current != start:
             current.make_closed()
         draw()
-    return False
+    return steps, path_length
 
 
-def DFS(draw, start, end):
+def DFS(draw, grid, start, end, buttons):
     visited = set()
     came_from = {}
     steps = 0
+    path_length = 0
     s = [start]
 
     while s:
@@ -180,16 +171,30 @@ def DFS(draw, start, end):
             if event.type == pygame.QUIT:
                 pygame.quit()
 
+            if pygame.mouse.get_pressed()[0]:
+                pos = pygame.mouse.get_pos()
+                if pos[0] > buttons['return'].x \
+                        and pos[0] < (buttons['return'].x + buttons['return'].width) \
+                        and pos[1] > buttons['return'].y \
+                        and pos[1] < (buttons['return'].y + buttons['return'].height):
+                    for i in range(len(grid)):
+                        for j in range(len(grid)):
+                            if grid[i][j].is_open() or grid[i][j].is_closed() or grid[i][j].is_path():
+                                grid[i][j].reset()
+                    steps = 0
+                    path_length = 0
+                    return steps, path_length
+
         current = s[-1]
         visited.add(current)
 
         if current == end:
-            length = reconstruct_path(came_from, end, draw)
+            path_length = reconstruct_path(came_from, end, draw)
             start.make_start()
             end.make_end()
             print(f"Steps: {steps}")
-            print(f"Path length: {length}")
-            return True
+            print(f"Path length: {path_length}")
+            return steps, path_length
         steps += 1
 
         for neighbor in current.neighbors:
@@ -203,7 +208,7 @@ def DFS(draw, start, end):
         if current != start:
             current.make_closed()
         draw()
-    return False
+    return steps, path_length
 
 
 def make_grid(rows, size):
@@ -225,7 +230,7 @@ def draw_grid(win, rows, size):
             pygame.draw.line(win, GREY, (j * gap, 0), (j * gap, size))
 
 
-def draw(win, grid, rows, size, buttons):
+def draw(win, grid, rows, size, buttons, steps, path_length):
     win.fill(WHITE)
 
     for row in grid:
@@ -234,6 +239,10 @@ def draw(win, grid, rows, size, buttons):
 
     for button in buttons:
         buttons[button].draw_button(win)
+
+    win.blit(record_font.render(f'Steps: {steps}', True, BLACK), (620, 240))
+    win.blit(record_font.render(f'Path: {path_length}', True, BLACK), (620, 270))
+
     draw_grid(win, rows, size)
     pygame.display.update()
 
@@ -251,20 +260,30 @@ def create_buttons():
     buttons['astar'] = Button(620, 30, 160, 50, GREY, LIGHTGREY, ORANGE, 'A* PathFinder')
     buttons['BFS'] = Button(620, 90, 160, 50, GREY, LIGHTGREY, ORANGE, 'BFS PathFinder')
     buttons['DFS'] = Button(620, 150, 160, 50, GREY, LIGHTGREY, ORANGE, 'DFS PathFinder')
-    buttons['start'] = Button(620, 520, 75, 50, DARKGREEN, GREEN, ORANGE, 'START')
-    buttons['reset'] = Button(705, 520, 75, 50, DARKRED, RED, ORANGE, 'RESET')
-    buttons['maze1'] = Button(620, 320, 160, 50, GREY, LIGHTGREY, ORANGE, 'I')
-    buttons['maze2'] = Button(620, 380, 160, 50, GREY, LIGHTGREY, ORANGE, 'II')
-    buttons['maze3'] = Button(620, 440, 160, 50, GREY, LIGHTGREY, ORANGE, 'III')
+    buttons['start'] = Button(620, 480, 160, 50, DARKGREEN, GREEN, ORANGE, 'Start')
+    buttons['return'] = Button(620, 540, 75, 40, DARKRED, RED, ORANGE, 'Return')
+    buttons['reset'] = Button(705, 540, 75, 40, DARKRED, RED, ORANGE, 'Reset')
+    buttons['maze1'] = Button(620, 300, 75, 75, GREY, LIGHTGREY, ORANGE, 'I')
+    buttons['maze2'] = Button(705, 300, 75, 75, GREY, LIGHTGREY, ORANGE, 'II')
+    buttons['maze3'] = Button(620, 385, 75, 75, GREY, LIGHTGREY, ORANGE, 'III')
+    buttons['maze4'] = Button(705, 385, 75, 75, GREY, LIGHTGREY, ORANGE, 'IV')
     return buttons
 
 
 def create_maze(grid, maze):
     for i in range(len(grid)):
         for j in range(len(grid)):
-            if maze[i][j] == "#":
-                grid[i][j].color = BLACK
-
+            if maze[i][j] == 'O':
+                grid[j][i].make_start()
+                start = grid[j][i]
+            elif maze[i][j] == 'X':
+                grid[j][i].make_end()
+                end = grid[j][i]
+            elif maze[i][j] == '#':
+                grid[j][i].make_barrier()
+            elif maze[i][j] == ' ':
+                grid[j][i].reset()
+    return start, end
 
 
 def main(win, size):
@@ -274,8 +293,10 @@ def main(win, size):
     start = None
     end = None
     run= True
+    steps = 0
+    path_length = 0
     while run:
-        draw(win, grid, ROWS, size, buttons)
+        draw(win, grid, ROWS, size, buttons, steps, path_length)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
@@ -324,19 +345,25 @@ def main(win, size):
                     and pos[0] < (buttons['maze1'].x + buttons['maze1'].width) \
                     and pos[1] > buttons['maze1'].y \
                     and pos[1] < (buttons['maze1'].y + buttons['maze1'].height):
-                    create_maze(grid, maze1)
+                    start, end = create_maze(grid, mazes[0])
 
                 elif pos[0] > buttons['maze2'].x \
                     and pos[0] < (buttons['maze2'].x + buttons['maze2'].width) \
                     and pos[1] > buttons['maze2'].y \
                     and pos[1] < (buttons['maze2'].y + buttons['maze2'].height):
-                    pass
+                    start, end = create_maze(grid, mazes[1])
 
                 elif pos[0] > buttons['maze3'].x \
                     and pos[0] < (buttons['maze3'].x + buttons['maze3'].width) \
                     and pos[1] > buttons['maze3'].y \
                     and pos[1] < (buttons['maze3'].y + buttons['maze3'].height):
-                    pass
+                    start, end = create_maze(grid, mazes[2])
+
+                elif pos[0] > buttons['maze4'].x \
+                    and pos[0] < (buttons['maze4'].x + buttons['maze4'].width) \
+                    and pos[1] > buttons['maze4'].y \
+                    and pos[1] < (buttons['maze4'].y + buttons['maze4'].height):
+                    start, end = create_maze(grid, mazes[3])
 
                 elif start and end \
                     and pos[0] > buttons['start'].x \
@@ -348,16 +375,29 @@ def main(win, size):
                             spot.update_neighbors(grid)
 
                     if buttons['astar'].selected:
-                        a_star(lambda: draw(win, grid, ROWS, size, buttons), grid, start, end)
+                        steps, path_length = a_star(lambda: draw(win, grid, ROWS, size, buttons, steps=0, path_length=0), grid, start, end, buttons)
                     if buttons['BFS'].selected:
-                        BFS(lambda: draw(win, grid, ROWS, size, buttons), start, end)
+                        steps, path_length = BFS(lambda: draw(win, grid, ROWS, size, buttons, steps=0, path_length=0), grid, start, end, buttons)
                     if buttons['DFS'].selected:
-                        DFS(lambda: draw(win, grid, ROWS, size, buttons), start, end)
+                        steps, path_length = DFS(lambda: draw(win, grid, ROWS, size, buttons, steps=0, path_length=0),grid, start, end, buttons)
+
+                elif pos[0] > buttons['return'].x \
+                    and pos[0] < (buttons['return'].x + buttons['return'].width) \
+                    and pos[1] > buttons['return'].y \
+                    and pos[1] < (buttons['return'].y + buttons['return'].height):
+                    steps = 0
+                    path_length = 0
+                    for i in range(len(grid)):
+                        for j in range(len(grid)):
+                            if grid[i][j].is_open() or grid[i][j].is_closed() or grid[i][j].is_path():
+                                grid[i][j].reset()
 
                 elif pos[0] > buttons['reset'].x \
                     and pos[0] < (buttons['reset'].x + buttons['reset'].width) \
                     and pos[1] > buttons['reset'].y \
                     and pos[1] < (buttons['reset'].y + buttons['reset'].height):
+                    steps = 0
+                    path_length = 0
                     start = None
                     end = None
                     grid = make_grid(ROWS, size)

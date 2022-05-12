@@ -1,16 +1,15 @@
 import pygame
 
 
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-BLUE = (0, 255, 0)
-YELLOW = (255, 255, 0)
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-PURPLE = (128, 0, 128)
-ORANGE = (255, 165, 0)
-GREY = (128, 128, 128)
-TURQUOISE = (64, 224, 208)
+WHITE = (255, 255, 255)     # blank spot
+BLACK = (0, 0, 0)           # barrier
+
+ORANGE = (255, 165, 0)      # start
+TURQUOISE = (64, 224, 208)  # end
+PURPLE = (128, 0, 128)      # path
+
+GREEN = (0, 255, 0)         # open spot
+RED = (255, 0, 0)           # closed spot
 
 
 class Spot:
@@ -44,6 +43,9 @@ class Spot:
 
     def is_end(self):
         return self.color == TURQUOISE
+
+    def is_path(self):
+        return self.color == PURPLE
 
     def reset(self):
         self.color = WHITE
