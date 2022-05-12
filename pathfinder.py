@@ -84,11 +84,10 @@ def a_star(draw, grid, start, end, buttons):
             path_length = reconstruct_path(came_from, end, draw)
             start.make_start()
             end.make_end()
-            print(f"Steps: {steps}")
-            print(f"Path length: {path_length}")
             return steps, path_length
 
         steps += 1
+
         for neighbor in current.neighbors:
             temp_g_score = g_score[current] + 1
 
@@ -141,11 +140,10 @@ def BFS(draw, grid, start, end, buttons):
             path_length = reconstruct_path(came_from, end, draw)
             start.make_start()
             end.make_end()
-            print(f"Steps: {steps}")
-            print(f"Path length: {path_length}")
             return steps, path_length
 
         steps += 1
+
         for neighbor in current.neighbors:
             if neighbor.is_blank() or neighbor.is_end() and neighbor not in visited:
                 came_from[neighbor] = current
@@ -192,9 +190,8 @@ def DFS(draw, grid, start, end, buttons):
             path_length = reconstruct_path(came_from, end, draw)
             start.make_start()
             end.make_end()
-            print(f"Steps: {steps}")
-            print(f"Path length: {path_length}")
             return steps, path_length
+
         steps += 1
 
         for neighbor in current.neighbors:
@@ -241,7 +238,7 @@ def draw(win, grid, rows, size, buttons, steps, path_length):
         buttons[button].draw_button(win)
 
     win.blit(record_font.render(f'Steps: {steps}', True, BLACK), (620, 240))
-    win.blit(record_font.render(f'Path: {path_length}', True, BLACK), (620, 270))
+    win.blit(record_font.render(f'Path Length: {path_length}', True, BLACK), (620, 270))
 
     draw_grid(win, rows, size)
     pygame.display.update()
