@@ -68,19 +68,25 @@ class Spot:
     def make_path(self):
         self.color = PURPLE
 
-    def draw(self, win):
+    def draw_full(self, win):
         pygame.draw.rect(win, self.color, (self.x, self.y, self.size, self.size))
+
+    def draw_path(self, win):
+        pygame.draw.circle(win, self.color, (self.x + self.size/2, self.y + self.size/2), (self.size/2)*.8)
 
     def update_neighbors(self, grid):
         self.neighbors = []
-        if self.row < self.total_rows - 1 and not grid[self.row + 1][self.col].is_barrier():# Down
-            self.neighbors.append(grid[self.row + 1][self.col])
-        if self.row > 0 and not grid[self.row - 1][self.col].is_barrier():                  # Up
-            self.neighbors.append(grid[self.row - 1][self.col])
-        if self.col < self.total_rows - 1 and not grid[self.row][self.col + 1].is_barrier():# Right
-            self.neighbors.append(grid[self.row][self.col + 1])
         if self.col > 0 and not grid[self.row][self.col - 1].is_barrier():                  # Left
             self.neighbors.append(grid[self.row][self.col - 1])
+        if self.col < self.total_rows - 1 and not grid[self.row][self.col + 1].is_barrier():# Right
+            self.neighbors.append(grid[self.row][self.col + 1])
+        if self.row > 0 and not grid[self.row - 1][self.col].is_barrier():                  # Up
+            self.neighbors.append(grid[self.row - 1][self.col])
+
+        if self.row < self.total_rows - 1 and not grid[self.row + 1][self.col].is_barrier():# Down
+            self.neighbors.append(grid[self.row + 1][self.col])
+
+
 
     def __lt__(self, other):
         return False
