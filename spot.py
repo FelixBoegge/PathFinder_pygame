@@ -87,5 +87,5 @@ class Spot:
             self.neighbors.append(grid[self.row + 1][self.col])
 
 
-    def __lt__(self, other):
-        return False
+   # def __lt__(self, other):
+   #     return False
